@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Counter</title>
+    <meta charset="UTF-8" />
+    <style>
+        @import url("https://fonts.googleapis.com/css2?family=Cabin+Sketch:wght@700&display=swap");
+
+        :root {
+            --bg-color: white;
+            --fg-color: black;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: black;
+                --fg-color: white;
+            }
+        }
+
+        @media (min-aspect-ratio: 1/1) {
+
+            /* landscape */
+            :root {
+                font-size: 3.5vh;
+            }
+        }
+
+        @media (max-aspect-ratio: 1/1) {
+
+            /* portrait */
+            :root {
+                font-size: 3.5vw;
+            }
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            font-family: "Cabin Sketch", sans-serif;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--bg-color);
+            color: var(--fg-color);
+        }
+
+        h1 {
+            font-size: 9rem;
+            margin: 0;
+        }
+
+        h1.animate-out {
+            position: absolute;
+            animation: fly-away 1s cubic-bezier(0.1, 0.5, 0.5, 0.8);
+            z-index: -1000;
+            user-select: none;
+            -ms-user-select: none;
+            -webkit-user-select: none;
+        }
+
+        @keyframes fly-away {
+            from {
+                transform: translate(0em, 0em) rotate(0deg);
+                opacity: 80%;
+            }
+
+            to {
+                transform: translate(calc(var(--hor-dev, 0) * 0.3em), -1em) rotate(calc(var(--hor-dev, 0) * 20deg));
+                opacity: 0%;
+            }
+        }
+
+        footer {
+            position: fixed;
+            bottom: 1rem;
+            width: 100vw;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>0</h1>
+    <footer>
+        (Press SPACE to add 1, ESC to reset)
+    </footer>
+
+    <script>
+        const counterDisplay = document.querySelector("h1");
+        let count = Number.parseInt(localStorage.getItem("count") || 0);
+        if (Number.isNaN(count)) count = 0;
+        console.log("init", count);
+        counterDisplay.innerText = count;
+
+        function animateOff(counterNode) {
+            const clone = counterNode.cloneNode();
+            clone.innerText = counterNode.innerText;
+            clone.classList.add("animate-out");
+            clone.style.setProperty("--hor-dev", 2 * Math.random() - 1);
+            const handler = e => document.body.removeChild(clone);
+            if (window.AnimationEvent !== null) {
+                clone.addEventListener("webkitAnimationEnd", handler);
+                clone.addEventListener("animationend", handler);
+            } else {
+                console.log("fallback, timeout until remove");
+                setTimeout(handler, 1000);
+            }
+            counterNode.after(clone);
+        }
+
+        function update(newCount) {
+            animateOff(counterDisplay);
+            count = newCount;
+            counterDisplay.innerText = newCount;
+            localStorage.setItem("count", newCount);
+        }
+
+        document.addEventListener("keydown", e => {
+            //console.log("keydown=", e.keyCode);
+            switch (e.keyCode) {
+                case 32: // SPACEBAR
+                    return update(count + 1);
+                case 27: // ESC
+                    return count !== 0 && update(0);
+                case 37: // ARROW LEFT
+                case 40: // ARROW DOWN
+                    return update(count - 1);
+                case 38: // ARROW UP
+                case 39: // ARROW RIGHT
+                    return update(count + 1);
+            }
+            // todo add number-keys to add multiple?
+        });
+
+        window.addEventListener("storage", () => {
+            const storageCount = Number.parseInt(
+                localStorage.getItem("count") || 0
+            );
+            if (
+                typeof storageCount === "number" &&
+                !Number.isNaN(storageCount) &&
+                count !== storageCount
+            ) {
+                update(storageCount);
+            }
+        });
+    </script>
+</body>
+
+</html>
