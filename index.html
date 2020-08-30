@@ -93,11 +93,33 @@
     </footer>
 
     <script>
+        // favicon rendering
+        // extracted from https://github.com/dlom/favicon.js (MIT License http://mit-license.org/ https://github.com/dlom/favicon.js/blob/master/LICENSE)
+        function changeFavicon(iconURL) {
+            const newLink = document.createElement("link");
+            newLink.type = "image/x-icon";
+            newLink.rel = "icon";
+            newLink.href = iconURL;
+            removeExistingFavicons();
+            document.head.appendChild(newLink);
+        };
+        function removeExistingFavicons() {
+            const links = document.head.getElementsByTagName("link");
+            for (let i = 0; i < links.length; i++) {
+                if (/\bicon\b/i.test(links[i].getAttribute("rel"))) {
+                    URL.revokeObjectURL(links[i].href);
+                    document.head.removeChild(links[i]);
+                }
+            }
+        };
+    </script>
+    <script>
         const counterDisplay = document.querySelector("h1");
         let count = Number.parseInt(localStorage.getItem("count") || 0);
         if (Number.isNaN(count)) count = 0;
         console.log("init", count);
         counterDisplay.innerText = count;
+        document.addEventListener("load", () => updateFaviconCount(count));
 
         function animateOff(counterNode) {
             const clone = counterNode.cloneNode();
@@ -115,10 +137,31 @@
             counterNode.after(clone);
         }
 
+        function updateFaviconCount(count) {
+            const prefersDark = window.matchMedia("(prefers-color-scheme: dark)");
+
+            const canvas = new OffscreenCanvas(96, 96);
+            const ctx = canvas.getContext("2d");
+
+            ctx.fillStyle = prefersDark ? "black" : "white";
+            ctx.fillRect(0, 0, 96, 96);
+
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.font = "90px \"Cabin Sketch\", sans-serif";
+            ctx.fillStyle = prefersDark ? "white" : "black";
+            ctx.fillText(count.toString(), 48, 56, 90);
+
+            canvas.convertToBlob()
+                .then(b => URL.createObjectURL(b))
+                .then(url => changeFavicon(url));
+        }
+
         function update(newCount) {
             animateOff(counterDisplay);
             count = newCount;
             counterDisplay.innerText = newCount;
+            updateFaviconCount(newCount);
             localStorage.setItem("count", newCount);
         }
 
@@ -136,7 +179,7 @@
                 case 39: // ARROW RIGHT
                     return update(count + 1);
             }
-            // todo add number-keys to add multiple?
+            // TODO add number-keys to add multiple? or shift modifier to +- 10?
         });
 
         window.addEventListener("storage", () => {
