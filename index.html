@@ -68,11 +68,13 @@
         @keyframes fly-away {
             from {
                 transform: translate(0em, 0em) rotate(0deg);
+                filter: blur(0rem);
                 opacity: 80%;
             }
 
             to {
                 transform: translate(calc(var(--hor-dev, 0) * 0.3em), -1em) rotate(calc(var(--hor-dev, 0) * 20deg));
+                filter: blur(0.8rem);
                 opacity: 0%;
             }
         }
