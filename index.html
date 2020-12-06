@@ -85,12 +85,20 @@
             width: 100vw;
             text-align: center;
         }
+
+        footer small {
+            font-size: 0.7rem;
+            opacity: 0.5;
+            line-height: 2rem;
+        }
     </style>
 </head>
 
 <body>
     <h1>0</h1>
     <footer>
+        <small>Last change: <span id="lastchangetime">no changes yet</span></small>
+        <br/>
         (Press SPACE to add 1, ESC to reset)
     </footer>
 
@@ -117,10 +125,20 @@
     </script>
     <script>
         const counterDisplay = document.querySelector("h1");
+        const lastChangeTimeDisplay = document.querySelector("#lastchangetime");
+
         let count = Number.parseInt(localStorage.getItem("count") || 0);
-        if (Number.isNaN(count)) count = 0;
-        console.log("init", count);
+        const lastChangeValue = Number.parseInt(localStorage.getItem("lastchangetime"));
+        let lastChangeTime = new Date(lastChangeValue);
+
+        if (Number.isNaN(count))
+            count = 0;
         counterDisplay.innerText = count;
+        console.log("init", count, lastChangeTime);
+
+        if (!Number.isNaN(lastChangeValue))
+            lastChangeTimeDisplay.innerText = lastChangeTime.toLocaleString();
+        
         document.addEventListener("load", () => updateFaviconCount(count));
 
         function animateOff(counterNode) {
@@ -159,12 +177,17 @@
                 .then(url => changeFavicon(url));
         }
 
-        function update(newCount) {
+        function update(newCount, newLastChangeTime = null) {
             animateOff(counterDisplay);
             count = newCount;
             counterDisplay.innerText = newCount;
             updateFaviconCount(newCount);
             localStorage.setItem("count", newCount);
+
+            lastChangeTime = newLastChangeTime ? newLastChangeTime : new Date();
+            lastChangeTimeDisplay.innerText = lastChangeTime.toLocaleString();
+            if (!newLastChangeTime)
+                localStorage.setItem("lastchangetime", lastChangeTime.valueOf());
         }
 
         document.addEventListener("keydown", e => {
@@ -184,17 +207,15 @@
             // TODO add number-keys to add multiple? or shift modifier to +- 10?
         });
 
-        window.addEventListener("storage", () => {
-            const storageCount = Number.parseInt(
-                localStorage.getItem("count") || 0
-            );
-            if (
-                typeof storageCount === "number" &&
-                !Number.isNaN(storageCount) &&
-                count !== storageCount
-            ) {
-                update(storageCount);
-            }
+        window.addEventListener("storage", (e) => {
+            const storageCount = (e.key === "count")
+                ? Number.parseInt(e.newValue || 0)
+                : count;
+            const storageChangeTime = e.key === "lastchangetime"
+                ? new Date(Number.parseInt(e.newValue))
+                : lastChangeTime;
+            
+            update(storageCount, storageChangeTime);
         });
     </script>
 </body>
